@@ -334,7 +334,7 @@ def test_camoufox_default_launch_uses_persistent_context(monkeypatch, tmp_path: 
         assert len(calls) == 1
         assert calls[0]["playwright"] is playwright
         assert calls[0]["persistent_context"] is True
-        assert Path(calls[0]["user_data_dir"]).name.startswith("mcp-firefox-")
+        assert Path(calls[0]["user_data_dir"]).name.startswith("mcp-camoufox-")
         assert calls[0]["headless"] is True
         assert calls[0]["handle_sigint"] is False
         assert calls[0]["handle_sigterm"] is False

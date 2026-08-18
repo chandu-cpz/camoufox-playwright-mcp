@@ -492,7 +492,11 @@ class BrowserBackend:
             if os.environ.get("PWMCP_PROFILES_DIR_FOR_TEST")
             else _cache_root() / "ms-playwright-mcp"
         )
-        browser_token = self._config.browser_channel or self._config.browser_name
+        browser_token = (
+            "camoufox"
+            if self._config.browser_provider == "camoufox"
+            else (self._config.browser_channel or self._config.browser_name)
+        )
         cwd_hash = hashlib.sha256(str(cwd).encode()).hexdigest()[:7]
         user_data_dir = cache_root / f"mcp-{browser_token}-{cwd_hash}"
         user_data_dir.mkdir(parents=True, exist_ok=True)
