@@ -1,0 +1,16 @@
+{
+  "name": "playwright-python-mcp-conformance",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:chromium": "playwright test --project=chromium"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.0.1",
+    "debug": "^4.4.3",
+    "typescript": "^6.0.3"
+  }
+}

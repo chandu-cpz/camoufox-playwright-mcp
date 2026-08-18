@@ -1,0 +1,33 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v3
+
+      - run: uv run ruff check .
+      - run: uv run mypy src tests
+      - run: uv run pytest
+      - run: uv build
+      - run: python -m venv /tmp/camoufox-smoke
+      - run: /tmp/camoufox-smoke/bin/python -m pip install dist/*.whl
+      - run: /tmp/camoufox-smoke/bin/camoufox-playwright-mcp --help
+      - run: /tmp/camoufox-smoke/bin/camoufox-mcp --help
+      - run: /tmp/camoufox-smoke/bin/python -m camoufox_playwright_mcp --help
+      - run: uv publish --token ${{ secrets.PYPI_TOKEN }}

@@ -1,0 +1,74 @@
+[project]
+name = "camoufox-playwright-mcp"
+version = "0.1.0"
+description = "Official-parity Playwright MCP server with stealth Camoufox anti-detect browser support"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Chandrakanth V", email = "chandrakanthvarakala@gmail.com" }
+]
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Internet :: WWW/HTTP :: Browsers",
+]
+dependencies = [
+    "camoufox[geoip]>=0.5.5",
+    "fastmcp>=3.4.2",
+    "pillow>=11.0.0",
+    "playwright>=1.59.0,<1.60",
+]
+
+[project.urls]
+Homepage = "https://github.com/chandu-cpz/camoufox-playwright-mcp"
+Repository = "https://github.com/chandu-cpz/camoufox-playwright-mcp"
+Issues = "https://github.com/chandu-cpz/camoufox-playwright-mcp/issues"
+
+[project.optional-dependencies]
+extension = [
+    "websockets>=14.0",
+]
+
+[project.scripts]
+camoufox-playwright-mcp = "camoufox_playwright_mcp:main"
+camoufox-mcp = "camoufox_playwright_mcp:main"
+playwright-python-mcp = "camoufox_playwright_mcp:main"
+
+[build-system]
+requires = ["uv_build>=0.10.12,<0.11.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.1.0",
+    "pytest>=9.1.1",
+    "ruff>=0.15.20",
+    "ty>=0.0.55",
+    "websockets>=14.0",
+]
+
+[tool.mypy]
+exclude = [
+    "^upstream/",
+    "^tests/conformance/upstream/node_modules/",
+    "^tests/conformance/upstream/test-results/",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
