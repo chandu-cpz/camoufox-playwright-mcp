@@ -8,7 +8,11 @@ on:
 
 jobs:
   publish:
+    name: Build and publish to PyPI
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/camoufox-playwright-mcp
     permissions:
       contents: read
       id-token: write
@@ -30,4 +34,6 @@ jobs:
       - run: /tmp/camoufox-smoke/bin/camoufox-playwright-mcp --help
       - run: /tmp/camoufox-smoke/bin/camoufox-mcp --help
       - run: /tmp/camoufox-smoke/bin/python -m camoufox_playwright_mcp --help
-      - run: uv publish --token ${{ secrets.PYPI_TOKEN }}
+
+      - name: Publish to PyPI via Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
