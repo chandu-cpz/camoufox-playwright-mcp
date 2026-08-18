@@ -238,9 +238,11 @@ class BrowserBackend:
                 if self._config.browser_provider == "camoufox":
                     camoufox_async_api = importlib.import_module("camoufox.async_api")
                     async_new_context = camoufox_async_api.AsyncNewContext
+                    valid_context_keys = {"preset", "os", "ff_version", "webrtc_ip", "proxy", "geolocation", "locale", "timezone_id"}
+                    filtered_camoufox_options = {k: v for k, v in self._config.camoufox_options.items() if k in valid_context_keys}
                     browser_context = await async_new_context(
                         self._browser,
-                        **self._config.camoufox_options,
+                        **filtered_camoufox_options,
                         **self._config.browser_context_options,
                     )
                 else:
@@ -337,7 +339,7 @@ class BrowserBackend:
                 if exc.name and exc.name.startswith("websockets"):
                     raise ValueError(
                         '--extension requires the optional "extension" dependency group. '
-                        'Install playwright-python-mcp[extension].'
+                        'Install camoufox-playwright-mcp[extension].'
                     ) from exc
                 raise
             self._extension_relay = CDPRelayServer(
@@ -347,7 +349,7 @@ class BrowserBackend:
                 user_data_dir=self._config.browser_user_data_dir,
             )
             await self._extension_relay.start()
-            await self._extension_relay.establish_extension_connection("playwright-python-mcp")
+            await self._extension_relay.establish_extension_connection("camoufox-playwright-mcp")
             self._browser = await self._playwright.chromium.connect_over_cdp(
                 self._extension_relay.cdp_endpoint(),
                 timeout=0,
@@ -425,6 +427,16 @@ class BrowserBackend:
         camoufox_options = dict(self._config.camoufox_options)
         for unsupported in ("channel", "chromium_sandbox", "executable_path"):
             launch_options.pop(unsupported, None)
+        try:
+            import camoufox.pkgman
+            camoufox.pkgman.launch_path()
+        except Exception:
+            try:
+                import camoufox.pkgman
+                camoufox.pkgman.CamoufoxFetcher().install()
+            except Exception:
+                pass
+
         headless = launch_options.pop("headless", self._config.headless)
         camoufox_options.setdefault("headless", headless)
         launch_options.setdefault("traces_dir", self._traces_dir(cwd))
@@ -563,14 +575,19 @@ def _map_browser_launch_error(
 ) -> Exception:
     message = str(exc)
     browser_name = launch_options.get("channel") or config.browser_channel or config.browser_name
+    if "Camoufox is not installed" in message or "camoufox fetch" in message:
+        return RuntimeError(
+            "Camoufox browser binary is not installed. "
+            "Run `camoufox-playwright-mcp install-browser` (or `uvx camoufox-playwright-mcp install-browser`) to download it."
+        )
     if "Executable doesn't exist" in message:
         target = "ffmpeg" if "ffmpeg" in message else browser_name
         label = "FFmpeg" if target == "ffmpeg" else f'Browser "{target}"'
-        return RuntimeError(f"{label} is not installed. Run `npx @playwright/mcp install-browser {target}` to install")
+        return RuntimeError(f"{label} is not installed. Run `camoufox-playwright-mcp install-browser {target}` to install")
     if "cannot open shared object file: No such file or directory" in message:
         return RuntimeError(
             f"Missing system dependencies required to run browser {browser_name}. "
-            f"Install them with: sudo npx playwright install-deps {browser_name}"
+            f"Install them with: sudo playwright install-deps {browser_name}"
         )
     if user_data_dir is not None and ("ProcessSingleton" in message or "exitCode=21" in message):
         return RuntimeError(
@@ -771,7 +788,7 @@ def _any_process_references_profile(user_data_dir: Path) -> bool:
     is visible in /proc even though ``.parentlock`` carries no pid. The
     scanning process itself is excluded.
     """
-    if os.name == "nt":
+    if os.name == "nt" or not os.path.exists("/proc"):
         return False
     profile = str(user_data_dir.resolve())
     self_pid = os.getpid()
@@ -801,6 +818,8 @@ def _profile_lock_owner_description(user_data_dir: Path) -> str:
         pid = int(target.rsplit("-", 1)[-1])
     except (OSError, ValueError):
         pid = None
+    if not os.path.exists("/proc"):
+        return f" (held by pid {pid})" if pid is not None else ""
     if pid is None:
         for entry in os.scandir("/proc"):
             if not entry.name.isdigit():

@@ -357,10 +357,12 @@ def _title_from_name(name: str) -> str:
 
 
 def _package_version() -> str:
-    try:
-        return version("playwright-python-mcp")
-    except PackageNotFoundError:
-        return "0.0.0"
+    for pkg in ("camoufox-playwright-mcp", "playwright-python-mcp"):
+        try:
+            return version(pkg)
+        except PackageNotFoundError:
+            pass
+    return "0.1.2"
 
 
 def _ping_timeout_ms() -> int:

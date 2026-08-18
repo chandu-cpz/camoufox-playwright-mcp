@@ -25,12 +25,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--block-service-workers", action="store_true")
     parser.add_argument(
         "--browser",
-        default="camoufox",
+        default=None,
         help="Browser or channel to use: camoufox (default), chrome, chromium, firefox, webkit.",
     )
     parser.add_argument(
         "--caps",
-        default="",
+        default=None,
         help="Comma-separated list of additional capabilities to enable.",
     )
     parser.add_argument(
@@ -54,11 +54,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--headless",
         action="store_true",
+        default=None,
         help="Run the browser in headless mode.",
     )
     parser.add_argument(
         "--test-id-attribute",
-        default="data-testid",
+        default=None,
         help="Attribute name to use for test ids.",
     )
     parser.add_argument(

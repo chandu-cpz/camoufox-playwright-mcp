@@ -9,7 +9,17 @@ from camoufox_playwright_mcp.backend.tool import param, tab_tool
 
 async def _handle_pdf_save(context: Context, params: dict[str, Any], response: Response) -> None:
     tab = await context.ensure_tab()
-    data = await tab.page.pdf()
+    try:
+        data = await tab.page.pdf()
+    except Exception as exc:
+        msg = str(exc)
+        if "PDF generation is only supported for Headless Chromium" in msg or "not supported" in msg.lower():
+            response.add_error(
+                "PDF saving (browser_pdf_save) is only supported on Headless Chromium. "
+                "To save PDFs, run with: --browser chromium --headless"
+            )
+            return
+        raise
     resolved_file = await response.resolve_client_file(
         FilenameTemplate(prefix="page", ext="pdf", suggested_filename=params.get("filename")),
         "Page as pdf",

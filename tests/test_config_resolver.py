@@ -357,3 +357,37 @@ def test_camoufox_env_vars_precedence(monkeypatch) -> None:
     assert public["browser"]["launchOptions"]["headless"] is True
     assert public["timeouts"]["navigation"] == 35000
 
+
+def test_env_var_chromium_when_cli_none(monkeypatch) -> None:
+    monkeypatch.setenv("CAMOUFOX_MCP_BROWSER", "chromium")
+
+    config = load_config(
+        browser=None,
+        caps=None,
+        config_path=None,
+        headless=None,
+        test_id_attribute=None,
+        vision=False,
+    )
+
+    assert config.browser_provider == "playwright"
+    assert config.browser_name == "chromium"
+
+
+def test_file_config_chromium_when_cli_none(tmp_path: Path) -> None:
+    config_file = tmp_path / "config.json"
+    config_file.write_text('{"browser": {"provider": "playwright", "browserName": "chromium"}}')
+
+    config = load_config(
+        browser=None,
+        caps=None,
+        config_path=config_file,
+        headless=None,
+        test_id_attribute=None,
+        vision=False,
+    )
+
+    assert config.browser_provider == "playwright"
+    assert config.browser_name == "chromium"
+
+

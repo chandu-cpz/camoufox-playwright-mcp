@@ -133,8 +133,8 @@ def _config_from_cli(
     **options: Any,
 ) -> dict[str, Any]:
     browser_provider: Literal["playwright", "camoufox"] | None = None
-    browser_name: str | None
-    channel: str | None
+    browser_name: str | None = None
+    channel: str | None = None
     if browser == "camoufox":
         browser_provider = "camoufox"
         browser_name, channel = "firefox", None
@@ -143,9 +143,6 @@ def _config_from_cli(
         browser_name, channel = _resolve_browser_param(browser)
         if browser_name is None and channel is None:
             raise ValueError(f'Unsupported browser "{browser}".')
-    else:
-        browser_provider = "camoufox"
-        browser_name, channel = "firefox", None
     launch_options: dict[str, Any] = {
         "channel": channel,
         "executablePath": options.get("executable_path"),
