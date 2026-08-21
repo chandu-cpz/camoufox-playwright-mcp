@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as pkg_version
 from pathlib import Path
 
 from .mcp.config import load_config
@@ -12,7 +14,7 @@ from .mcp.server import create_server
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="camoufox-playwright-mcp",
-        description="Official-parity Playwright MCP server with stealth Camoufox anti-detect browser support",
+        description="Unofficial Python port of the official Playwright MCP server, running the Camoufox browser",
     )
     parser.add_argument(
         "--allowed-hosts",
@@ -114,6 +116,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Legacy option, use --caps=vision instead.",
     )
 
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s " + _package_version(),
+    )
+
     subparsers = parser.add_subparsers(dest="command")
     install_parser = subparsers.add_parser(
         "install-browser",
@@ -194,6 +202,13 @@ def main(argv: list[str] | None = None) -> None:
     )
     server = create_server(config)
     server.run()
+
+
+def _package_version() -> str:
+    try:
+        return pkg_version("camoufox-playwright-mcp")
+    except PackageNotFoundError:
+        return "unknown (not installed)"
 
 
 def _split_comma(value: str | None) -> list[str] | None:

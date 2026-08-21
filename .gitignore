@@ -2,6 +2,8 @@ AGENTS.md
 plan.md
 rules.md
 .mimocode/
+.pi/
+.pi-subagents/
 .playwright-mcp/
 .zapply/
 /upstream/

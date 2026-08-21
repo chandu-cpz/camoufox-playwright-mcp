@@ -365,7 +365,9 @@ class Tab:
                 await self.wait_for_timeout(0.5)
             return result
 
-        action_task = self.context.track_task(asyncio.create_task(action_and_settle()))
+        action_task = self.context.track_task(
+            asyncio.create_task(action_and_settle()), capture_exception=False
+        )
         modal_task = self.context.track_task(
             asyncio.create_task(self._modal_event.wait())
         )
@@ -820,7 +822,9 @@ class Tab:
                 return await self.page.title()
             raise Error("title timeout")
 
-        title_task = self.context.track_task(asyncio.create_task(_title_with_bound()))
+        title_task = self.context.track_task(
+            asyncio.create_task(_title_with_bound()), capture_exception=False
+        )
         modal_task = self.context.track_task(
             asyncio.create_task(self._modal_event.wait())
         )
@@ -933,7 +937,9 @@ class Tab:
                 return ""
             raise
 
-        capture_task = self.context.track_task(asyncio.create_task(capture()))
+        capture_task = self.context.track_task(
+            asyncio.create_task(capture()), capture_exception=False
+        )
         modal_task = self.context.track_task(
             asyncio.create_task(self._modal_event.wait())
         )

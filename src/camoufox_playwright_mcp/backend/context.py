@@ -314,8 +314,11 @@ class Context:
     def set_running_tool(self, name: str | None) -> None:
         self._running_tool_name = name
 
-    def track_task(self, task: asyncio.Task[Any]) -> asyncio.Task[Any]:
-        task.add_done_callback(self._capture_task_exception)
+    def track_task(
+        self, task: asyncio.Task[Any], *, capture_exception: bool = True
+    ) -> asyncio.Task[Any]:
+        if capture_exception:
+            task.add_done_callback(self._capture_task_exception)
         return task
 
     def lookup_secret(self, secret_name: str) -> LookupSecret:

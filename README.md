@@ -2,16 +2,16 @@
 
 # 🦊 Camoufox Playwright MCP
 
-**The Stealth, Anti-Detect Browser Automation Server for AI Agents**
+**The Official Playwright MCP Tools, in Python, on the Camoufox Browser**
 
 [![PyPI version](https://img.shields.io/pypi/v/camoufox-playwright-mcp.svg?color=blue)](https://pypi.org/project/camoufox-playwright-mcp/)
 [![Python Version](https://img.shields.io/pypi/pyversions/camoufox-playwright-mcp.svg)](https://pypi.org/project/camoufox-playwright-mcp/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Test Suite](https://github.com/chandu-cpz/camoufox-playwright-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/chandu-cpz/camoufox-playwright-mcp/actions)
 
-*A Python-native port of Microsoft's official Playwright MCP server — supercharged with Camoufox's custom anti-detect browser engine.*
+*An unofficial Python port of Microsoft's official Playwright MCP server, running the [Camoufox](https://github.com/daijro/camoufox) Firefox build as the default browser.*
 
-[Highlights](#-highlights) • [Quickstart](#-quickstart) • [Client Setup](#-mcp-client-configuration) • [Why Camoufox?](#-why-camoufox-mcp-vs-standard-playwright-mcp) • [Connection Modes](#-browser-modes--connections) • [Configuration](#-configuration-json--ini) • [Tool Reference](#-available-mcp-tools) • [Divergences](#-intentional-python-divergences--limitations)
+[Highlights](#-highlights) • [Quickstart](#-quickstart) • [Client Setup](#-mcp-client-configuration) • [Connection Modes](#-browser-modes--connections) • [Configuration](#-configuration-json--ini) • [Tool Reference](#-available-mcp-tools) • [Divergences](#-intentional-python-divergences--limitations)
 
 </div>
 
@@ -19,32 +19,22 @@
 
 ## ⚡ Highlights
 
-- 🥷 **Stealth by Default**: Uses [Camoufox](https://github.com/daijro/camoufox) to mask `navigator.webdriver`, spoof hardware concurrency, randomize canvas/WebGL/audio fingerprints, and bypass anti-bot shields (Cloudflare Turnstile, DataDome, Akamai, etc.).
-- 🎭 **100% Official Tool Parity**: Complete 1:1 drop-in replacement for `@playwright/mcp` (`browser_navigate`, `browser_click`, `browser_fill`, `browser_snapshot`, `browser_take_screenshot`, `browser_evaluate`, `browser_localstorage_*`, etc.).
+- 🦊 **Camoufox by Default**: Runs [Camoufox](https://github.com/daijro/camoufox), a Firefox build with fingerprint spoofing built in (`navigator.webdriver` masked, canvas/WebGL/audio randomized, hardware details spoofed).
+- 🎭 **Unofficial Python Port of the Official Playwright MCP**: Implements the same tools and behavior as Microsoft's `@playwright/mcp` (`browser_navigate`, `browser_click`, `browser_type`, `browser_snapshot`, `browser_take_screenshot`, `browser_evaluate`, `browser_localstorage_*`, etc.), so existing MCP configs carry over. Not affiliated with Microsoft or the Playwright team.
 - 🐍 **Python-Native Code Generation**: Emits clean Python Playwright code snippets instead of JavaScript strings:
   ```python
   await page.get_by_role("button", name="Submit").click()
   ```
-- 🔄 **Dual Engine Flexibility**: Run stealth `camoufox` by default, or switch seamlessly to standard Playwright engines (`chromium`, `chrome`, `firefox`, `webkit`), remote CDP endpoints, or browser extensions.
+- 🔄 **Dual Engine Flexibility**: Run `camoufox` by default, or switch to standard Playwright engines (`chromium`, `chrome`, `firefox`, `webkit`), remote CDP endpoints, or browser extensions.
 - 🚀 **Zero-Install with `uvx`**: Run on-demand in Claude Desktop, Cursor, Windsurf, Cline, OpenCode, or any MCP client without manual virtualenv management.
 
 ---
 
-## ⚔️ Why Camoufox MCP vs Standard Playwright MCP?
+## 🤔 What this is (and isn't)
 
-When AI agents browse the web using standard automation servers, they are immediately flagged and blocked by Cloudflare Turnstile, DataDome, and anti-bot systems.
+This is an unofficial Python port of Microsoft's [`@playwright/mcp`](https://github.com/microsoft/playwright-mcp). It serves the same MCP tools with the same behavior, so you can swap it into an existing config without changing your prompts. The difference is the browser: instead of stock Chromium or Firefox, it launches [Camoufox](https://github.com/daijro/camoufox), a Firefox build with anti-fingerprinting built in.
 
-| Feature / Metric | **Camoufox MCP** (`camoufox-playwright-mcp`) | **Standard Playwright MCP** (`@playwright/mcp`) |
-|---|---|---|
-| **Default Engine** | **Camoufox Anti-Detect Firefox** | Standard Chromium / Firefox |
-| **`navigator.webdriver`** | **`false`** 🛡️ *(Masked)* | `true` 🚨 *(Detected)* |
-| **Bot Detection (`bot.sannysoft.com`)** | **`PASSED`** ✅ | `FAILED` ❌ |
-| **Generated Code Snippets** | **Python Playwright** (`await page.click(...)`) | JavaScript Playwright |
-| **Unsafe Code Execution** | **Python Playwright Async** | JavaScript |
-| **Hardware Fingerprinting** | Spoofed / Humanized | Raw Host Leak |
-| **OS / Platform Spoofing** | Configurable (Windows / macOS / Linux) | Host Environment |
-| **Tool Surface** | Full Official Specification | Full Official Specification |
-| **Direct Execution** | `uvx camoufox-playwright-mcp` | `npx @playwright/mcp` |
+It is not affiliated with Microsoft or the Playwright team. Browser-level behavior is upstream Camoufox; this port only wires it into the official MCP tool contract.
 
 ---
 
@@ -52,11 +42,14 @@ When AI agents browse the web using standard automation servers, they are immedi
 
 ### Run On-Demand with `uvx`
 
-No installation required:
+No installation required. Needs Python 3.12+ (`uvx` handles this). The first launch downloads the Camoufox browser (~150MB, one time), so the first tool call can take a few minutes; after that it starts instantly:
 
 ```bash
-# Run stealth Camoufox browser in headless mode (recommended for AI agents)
+# Run the Camoufox browser in headless mode (recommended for AI agents)
 uvx camoufox-playwright-mcp --headless
+
+# Pre-download the browser ahead of time ("all" also installs Playwright browsers)
+uvx camoufox-playwright-mcp install-browser all
 
 # Run with visible browser window (headed mode)
 uvx camoufox-playwright-mcp
@@ -215,9 +208,9 @@ uvx --from 'camoufox-playwright-mcp[extension]' camoufox-playwright-mcp --extens
 
 ---
 
-## 🥷 Stealth & Anti-Detect Configuration
+## 🦊 Camoufox Configuration
 
-When running with `--browser camoufox` (default), Camoufox applies advanced stealth configurations. You can customize anti-detect parameters via a JSON configuration file (`--config config.json`):
+When running with `--browser camoufox` (default), you can customize Camoufox's browser parameters via a JSON configuration file (`--config config.json`):
 
 ```json
 {
@@ -292,12 +285,13 @@ All CLI flags can be set via environment variables:
 
 ## 🧰 Available MCP Tools
 
-Full 1:1 match with official Playwright MCP specifications:
+Same tools as the official Playwright MCP server:
 
 ### Navigation & Interaction
 * `browser_navigate`: Navigate to any URL with automatic wait-for-load.
 * `browser_click`: Click elements using locators, coordinates, or semantic text.
-* `browser_fill`: Fill input fields with anti-detection typing simulation.
+* `browser_type`: Fill input fields (fill semantics, Camoufox humanized typing where available).
+* `browser_fill_form`: Fill multiple form fields in one call.
 * `browser_hover`, `browser_type`, `browser_press_key`: Natural mouse and keyboard interactions.
 * `browser_file_upload`: Upload files to file input elements.
 * `browser_drag`, `browser_drop`: Perform drag-and-drop operations.

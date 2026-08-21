@@ -17,7 +17,9 @@ def _bare_tab(**attrs: Any) -> Tab:
 
 
 class FakeContext:
-    def track_task(self, task: asyncio.Task[Any]) -> asyncio.Task[Any]:
+    def track_task(
+        self, task: asyncio.Task[Any], *, capture_exception: bool = True
+    ) -> asyncio.Task[Any]:
         return task
 
 

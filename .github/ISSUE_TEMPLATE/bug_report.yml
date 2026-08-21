@@ -1,0 +1,62 @@
+name: Bug report
+description: Something broke or behaves differently from the official Playwright MCP
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This server drives real browser sessions. **Never paste cookies, storage
+        state, tokens, or signed-in URLs.** Scrub screenshots and logs.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the exact command or MCP client config you ran, and the full error if any.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: If this differs from the official `@playwright/mcp` behavior, say what the official server does.
+  - type: dropdown
+    id: client
+    attributes:
+      label: MCP client
+      options:
+        - Claude Desktop
+        - Cursor
+        - Cline / Roo Code
+        - Windsurf
+        - OpenCode
+        - Zed
+        - Other / custom
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser engine
+      options:
+        - camoufox (default)
+        - chromium
+        - chrome
+        - firefox
+        - webkit
+        - CDP / endpoint / extension connection
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and Python version
+      placeholder: e.g. Ubuntu 24.04, Python 3.12.3 (or "uvx managed")
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      description: Output of `uvx camoufox-playwright-mcp --version`, or the version pin in your config.
+    validations:
+      required: true
