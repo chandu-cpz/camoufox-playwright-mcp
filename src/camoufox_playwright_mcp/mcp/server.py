@@ -11,12 +11,16 @@ from typing import Any, Literal, cast
 from urllib.parse import unquote, urlparse
 
 import anyio
+import mcp.types as mt
 from fastmcp import FastMCP
+from fastmcp.exceptions import ValidationError as FastMCPValidationError
 from fastmcp.server.context import Context as FastMCPContext
 from fastmcp.server.middleware import CallNext, MiddlewareContext
 from fastmcp.server.middleware import Middleware as FastMCPMiddleware
+from fastmcp.tools.base import ToolResult
 from mcp.types import ToolAnnotations
 from playwright.async_api import BrowserContext as PlaywrightBrowserContext
+from pydantic import ValidationError as PydanticValidationError
 from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
@@ -102,6 +106,7 @@ def _create_server(config: ServerConfig, backend_pool: BackendPool) -> Playwrigh
     if heartbeat_timeout > 0:
         app.add_middleware(HeartbeatMiddleware(backend_pool, timeout_ms=heartbeat_timeout))
     app.add_middleware(BackendSessionCleanupMiddleware(backend_pool))
+    app.add_middleware(ValidationMiddleware())
 
     for tool in tools:
         read_only = tool.tool_type in {"readOnly", "assertion"}
@@ -253,6 +258,77 @@ class BackendPool:
         return cast(PlaywrightBrowserContext, context)
 
 
+
+class ValidationMiddleware(FastMCPMiddleware):
+    """Catch pydantic/FastMCP validation errors and return clean MCP errors matching official."""
+
+    async def on_call_tool(
+        self,
+        context: MiddlewareContext[mt.CallToolRequestParams],
+        call_next: CallNext[mt.CallToolRequestParams, ToolResult],
+    ) -> ToolResult:
+        try:
+            return await call_next(context)
+        except FastMCPValidationError as exc:
+            # FastMCP wraps pydantic call validation; extract underlying detail
+            cause = exc.__cause__
+            # context.message can be CallToolRequestParams or a Request wrapper
+            tool_name = getattr(context.message, "name", None)
+            if tool_name is None:
+                params = getattr(context.message, "params", None)
+                if params is not None:
+                    tool_name = getattr(params, "name", "tool")
+                else:
+                    tool_name = "tool"
+            if isinstance(cause, PydanticValidationError):
+                # Build a concise message similar to official: one line per field
+                lines: list[str] = []
+                for err in cause.errors(include_url=False):
+                    loc = ".".join(str(p) for p in err.get("loc", []))
+                    # loc is like ('target',) or ('fields', 0, 'target')
+                    # Simplify: show last part
+                    if loc:
+                        short = loc.split(".")[-1]
+                    else:
+                        short = "value"
+                    msg = err.get("msg", "")
+                    # Map pydantic messages to more readable
+                    # e.g. "Missing required keyword only argument" -> "Required"
+                    if "Missing required" in msg or err.get("type") == "missing":
+                        msg = "Required"
+                    elif "Unexpected keyword" in msg or err.get("type") == "unexpected_keyword_argument":
+                        # Show as unexpected field
+                        msg = f"Unexpected field: {short}"
+                        short = "value"
+                    elif "Field required" in msg:
+                        msg = "Required"
+                    lines.append(f"- {short}: {msg}")
+                detail = "\n".join(lines) if lines else str(cause)
+            else:
+                detail = str(cause) if cause else str(exc)
+            formatted = f'Invalid arguments for tool "{tool_name}":\n' + detail
+            return ToolResult(content=f"### Error\n{formatted}", is_error=True)
+        except PydanticValidationError as exc:
+            tool_name = getattr(context.message, "name", None)
+            if tool_name is None:
+                params = getattr(context.message, "params", None)
+                if params is not None:
+                    tool_name = getattr(params, "name", "tool")
+                else:
+                    tool_name = "tool"
+            lines = []
+            for err in exc.errors(include_url=False):
+                loc = ".".join(str(p) for p in err.get("loc", []))
+                short = loc.split(".")[-1] if loc else "value"
+                msg = err.get("msg", "")
+                if "Field required" in msg or err.get("type") == "missing":
+                    msg = "Required"
+                lines.append(f"- {short}: {msg}")
+            detail = "\n".join(lines) if lines else str(exc)
+            formatted = f'Invalid arguments for tool "{tool_name}":\n' + detail
+            return ToolResult(content=f"### Error\n{formatted}", is_error=True)
+
+
 class HeartbeatMiddleware(FastMCPMiddleware):
     def __init__(self, backend_pool: BackendPool, *, timeout_ms: int, interval_ms: int = 3000) -> None:
         self._backend_pool = backend_pool
@@ -362,7 +438,7 @@ def _package_version() -> str:
             return version(pkg)
         except PackageNotFoundError:
             pass
-    return "0.1.2"
+    return "0.1.4"
 
 
 def _ping_timeout_ms() -> int:

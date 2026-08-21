@@ -377,7 +377,7 @@ geoip = [
 
 [[package]]
 name = "camoufox-playwright-mcp"
-version = "0.1.3"
+version = "0.1.4"
 source = { editable = "." }
 dependencies = [
     { name = "camoufox", extra = ["geoip"] },

@@ -6,9 +6,9 @@ import importlib
 import inspect
 import json
 import os
+import re
 import sys
 import tempfile
-import traceback
 from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -563,8 +563,40 @@ def _drain_unhandled_errors(context: Context, response: Response) -> None:
 
 
 def _format_exception(exc: Exception) -> str:
-    text = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)).strip()
-    return text or str(exc)
+    # Sanitize: do not leak absolute paths / full traceback (seen on NS_ERROR_UNKNOWN_HOST).
+    # Vallidation errors from FastMCP/pydantic arrive as "validation errors for call[_tool_handler]"
+    # which we reformat to match official: 'Invalid arguments for tool "X":'
+    msg = str(exc).strip()
+    low = msg.lower()
+    if "validation errors for call" in low or "missing required keyword" in low or "unexpected keyword argument" in low:
+        # Extract a concise summary; keep original msg but without traceback header and file paths
+        # Try to pull field names
+        # Example: "2 validation errors for call[_tool_handler]\ntarget\n  Missing required..."
+        # We return just the validation part without the "for call..." prefix
+        # and strip the file-path traceback if present
+        # Remove the "validation errors for call..." line
+        # Remove first line like "2 validation errors for call[_tool_handler]"
+        lines_tmp = msg.splitlines()
+        if lines_tmp and "validation errors for call" in lines_tmp[0].lower():
+            msg = "\n".join(lines_tmp[1:])
+        msg = re.sub(r"^\d+ validation errors.*", "", msg, flags=re.IGNORECASE|re.MULTILINE)
+        # Strip "For further information visit https://errors.pydantic.dev/..." lines
+        msg = re.sub(r"For further information visit.*", "", msg)
+        msg = "\n".join(line.strip() for line in msg.splitlines() if line.strip())
+        # If we can infer tool, caller will wrap with "Invalid arguments for tool"
+        # Return raw validation lines; the caller in server.py will wrap
+        return msg or str(exc).strip()
+    # For Playwright errors, str(exc) already contains call log; trim any absolute path leakage
+    # Remove lines that look like 'File "/home/..."'
+    lines = []
+    for line in msg.splitlines():
+        if 'File "/' in line and "camoufox_playwright_mcp" in line:
+            continue
+        if line.strip().startswith('File "') and ".venv" in line:
+            continue
+        lines.append(line)
+    cleaned = "\n".join(lines).strip()
+    return cleaned or str(exc).strip()
 
 
 def _map_browser_launch_error(

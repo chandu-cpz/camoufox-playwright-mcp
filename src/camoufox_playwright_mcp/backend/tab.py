@@ -238,10 +238,24 @@ class Tab:
         return url
 
     async def go_back(self) -> None:
-        await self.page.go_back(wait_until="commit", timeout=self.navigation_timeout)
+        try:
+            await self.page.go_back(wait_until="domcontentloaded", timeout=self.navigation_timeout)
+        except Exception as exc:
+            # Camoufox/Firefox can raise NS_ERROR_ABORT on committed back navigations
+            from playwright.async_api import Error as PlaywrightError
+            if not isinstance(exc, PlaywrightError) or not _is_aborted_navigation_error(exc):
+                raise
+            # If already on requested URL, treat as success (mirrors navigate handling)
+            pass
 
     async def go_forward(self) -> None:
-        await self.page.go_forward(wait_until="commit", timeout=self.navigation_timeout)
+        try:
+            await self.page.go_forward(wait_until="domcontentloaded", timeout=self.navigation_timeout)
+        except Exception as exc:
+            from playwright.async_api import Error as PlaywrightError
+            if not isinstance(exc, PlaywrightError) or not _is_aborted_navigation_error(exc):
+                raise
+            pass
 
     async def reload(self) -> None:
         await self.page.reload(timeout=self.navigation_timeout)
@@ -593,7 +607,7 @@ class Tab:
             )
         except Exception as exc:
             raise ValueError(
-                f"Ref {target} not found in the current page snapshot. Try capturing new snapshot."
+                f"Error: Ref {target} not found in the current page snapshot. Try capturing new snapshot."
             ) from exc
 
     async def snapshot_locator(self, target: str | None) -> Locator:

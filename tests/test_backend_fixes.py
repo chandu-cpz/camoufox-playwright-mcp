@@ -19,7 +19,7 @@ from camoufox_playwright_mcp.mcp.server import _package_version
 
 def test_package_version_reports_valid() -> None:
     ver = _package_version()
-    assert ver in {"0.1.1", "0.1.2", "0.1.3"}
+    assert ver in {"0.1.1", "0.1.2", "0.1.3", "0.1.4"}
 
 
 def test_proc_scan_safe_on_non_proc_systems(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
