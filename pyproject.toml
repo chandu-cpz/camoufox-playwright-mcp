@@ -1,7 +1,7 @@
 [project]
 name = "camoufox-playwright-mcp"
 version = "0.1.4"
-description = "Unofficial Python port of the official Playwright MCP server, running the Camoufox browser"
+description = "The Playwright MCP, on Camoufox. Same tools, harder-to-detect browser."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]

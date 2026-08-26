@@ -2,14 +2,14 @@
 
 # 🦊 Camoufox Playwright MCP
 
-**The Official Playwright MCP Tools, in Python, on the Camoufox Browser**
+**The Playwright MCP, on Camoufox. Same tools, harder to detect.**
 
 [![PyPI version](https://img.shields.io/pypi/v/camoufox-playwright-mcp.svg?color=blue)](https://pypi.org/project/camoufox-playwright-mcp/)
 [![Python Version](https://img.shields.io/pypi/pyversions/camoufox-playwright-mcp.svg)](https://pypi.org/project/camoufox-playwright-mcp/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Test Suite](https://github.com/chandu-cpz/camoufox-playwright-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/chandu-cpz/camoufox-playwright-mcp/actions)
 
-*An unofficial Python port of Microsoft's official Playwright MCP server, running the [Camoufox](https://github.com/daijro/camoufox) Firefox build as the default browser.*
+*The Playwright MCP tool set, in Python, on Camoufox. Built for sites that fingerprint or block the default browser.*
 
 [Highlights](#-highlights) • [Quickstart](#-quickstart) • [Client Setup](#-mcp-client-configuration) • [Connection Modes](#-browser-modes--connections) • [Configuration](#-configuration-json--ini) • [Tool Reference](#-available-mcp-tools) • [Divergences](#-intentional-python-divergences--limitations)
 
@@ -20,7 +20,7 @@
 ## ⚡ Highlights
 
 - 🦊 **Camoufox by Default**: Runs [Camoufox](https://github.com/daijro/camoufox), a Firefox build with fingerprint spoofing built in (`navigator.webdriver` masked, canvas/WebGL/audio randomized, hardware details spoofed).
-- 🎭 **Unofficial Python Port of the Official Playwright MCP**: Implements the same tools and behavior as Microsoft's `@playwright/mcp` (`browser_navigate`, `browser_click`, `browser_type`, `browser_snapshot`, `browser_take_screenshot`, `browser_evaluate`, `browser_localstorage_*`, etc.), so existing MCP configs carry over. Not affiliated with Microsoft or the Playwright team.
+- 🎭 **Same tool set as `@playwright/mcp`, runs on Camoufox.** Drop-in for the official server's tool contract (`browser_navigate`, `browser_click`, `browser_snapshot`, `browser_evaluate`, `browser_localstorage_*`, and the rest). Camoufox masks `navigator.webdriver` and randomizes canvas, WebGL, and audio per session. Switch to Chromium, Chrome, Firefox, or WebKit when you don't need stealth.
 - 🐍 **Python-Native Code Generation**: Emits clean Python Playwright code snippets instead of JavaScript strings:
   ```python
   await page.get_by_role("button", name="Submit").click()
@@ -32,9 +32,11 @@
 
 ## 🤔 What this is (and isn't)
 
-This is an unofficial Python port of Microsoft's [`@playwright/mcp`](https://github.com/microsoft/playwright-mcp). It serves the same MCP tools with the same behavior, so you can swap it into an existing config without changing your prompts. The difference is the browser: instead of stock Chromium or Firefox, it launches [Camoufox](https://github.com/daijro/camoufox), a Firefox build with anti-fingerprinting built in.
+This server gives you the same tool set as `@playwright/mcp`: `browser_navigate`, `browser_click`, `browser_snapshot`, and the rest. Drop it into an existing client config and your prompts keep working.
 
-It is not affiliated with Microsoft or the Playwright team. Browser-level behavior is upstream Camoufox; this port only wires it into the official MCP tool contract.
+The browser underneath is different. Camoufox is a Firefox build with anti-fingerprinting built in. `navigator.webdriver` is masked, canvas and WebGL and audio outputs are randomized per session, and hardware details are spoofed. Useful when the site you're driving detects or blocks the default browser. Switch to Chromium, Chrome, Firefox, or WebKit when you don't need that.
+
+Not affiliated with Microsoft or the Playwright team. The browser-level fingerprinting work lives in [Camoufox](https://github.com/daijro/camoufox); this server wires it into the MCP tool contract.
 
 ---
 
