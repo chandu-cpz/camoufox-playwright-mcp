@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import cast
 
@@ -19,7 +20,7 @@ from camoufox_playwright_mcp.mcp.server import _package_version
 
 def test_package_version_reports_valid() -> None:
     ver = _package_version()
-    assert ver in {"0.1.1", "0.1.2", "0.1.3", "0.1.4", "0.1.5"}
+    assert re.fullmatch(r"\d+\.\d+\.\d+", ver) is not None
 
 
 def test_proc_scan_safe_on_non_proc_systems(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

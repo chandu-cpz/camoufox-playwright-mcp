@@ -4,6 +4,26 @@ All notable changes to `camoufox-playwright-mcp` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-10-27
+
+### Fixed
+- Windows: the server no longer crashes at startup with `NotImplementedError`.
+  `anyio.open_signal_receiver()` requires `loop.add_signal_handler()`, which
+  asyncio does not implement on Windows, so the process died before serving a
+  single tool and MCP clients saw it as a timeout. Startup now falls back to
+  waiting for shutdown (stdin EOF / client disconnect), and Unix behaviour is
+  unchanged. (#1, #2)
+- The server now exits when the client disconnects. The heartbeat and
+  per-session backend cleanup tasks were parked on a FastMCP task group that
+  is never cancelled on stdio EOF, so a disconnected client left an orphaned
+  server process behind. Those tasks now run in the session's own task group,
+  which is cancelled when the session closes. (#4)
+
+### Added
+- A `windows-latest` CI job runs a real MCP stdio handshake
+  (`initialize` + `tools/list` + clean exit, no browser launch), and a
+  portable regression test pins the Windows signal-handler fallback. (#3)
+
 ## [0.1.5] - 2026-08-26
 
 ### Changed
