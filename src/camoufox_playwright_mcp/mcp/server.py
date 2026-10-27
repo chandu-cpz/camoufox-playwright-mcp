@@ -67,10 +67,17 @@ class PlaywrightMCPServer:
         **transport_kwargs: Any,
     ) -> None:
         async def watch_signals(scope: anyio.CancelScope) -> None:
-            with anyio.open_signal_receiver(signal.SIGINT, signal.SIGTERM) as signals:
-                async for _signum in signals:
-                    scope.cancel()
-                    return
+            try:
+                with anyio.open_signal_receiver(signal.SIGINT, signal.SIGTERM) as signals:
+                    async for _signum in signals:
+                        scope.cancel()
+                        return
+            except NotImplementedError:
+                # Windows: asyncio has no add_signal_handler(), so
+                # open_signal_receiver() is unsupported. Wait until the task
+                # group is cancelled on server shutdown (stdin EOF / client
+                # disconnect) instead of crashing at startup.
+                await anyio.sleep_forever()
 
         with anyio.CancelScope() as scope:
             self._cancel_scope = scope
