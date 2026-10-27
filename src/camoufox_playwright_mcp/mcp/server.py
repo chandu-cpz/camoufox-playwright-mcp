@@ -354,7 +354,7 @@ class HeartbeatMiddleware(FastMCPMiddleware):
         session_id = _session_id(fastmcp_context)
         async with self._lock:
             if session_identity not in self._active_sessions:
-                task_group = getattr(session, "_subscription_task_group", None)
+                task_group = _session_task_group(session)
                 if task_group is not None:
                     self._active_sessions.add(session_identity)
                     task_group.start_soon(self._heartbeat_loop, session, session_identity, session_id)
@@ -402,7 +402,7 @@ class BackendSessionCleanupMiddleware(FastMCPMiddleware):
         session_id = _session_id(fastmcp_context)
         async with self._lock:
             if session_identity not in self._active_sessions:
-                task_group = getattr(session, "_subscription_task_group", None)
+                task_group = _session_task_group(session)
                 if task_group is not None:
                     self._active_sessions.add(session_identity)
                     task_group.start_soon(self._close_when_session_ends, session_identity, session_id)
@@ -475,6 +475,23 @@ async def _list_roots(ctx: FastMCPContext | None) -> list[str] | None:
         if uri.startswith("file://"):
             result.append(unquote(urlparse(uri).path))
     return result
+
+
+def _session_task_group(session: Any) -> anyio.abc.TaskGroup | None:
+    """Return a task group whose lifetime ends with the session.
+
+    Prefer the session's own task group: it is cancelled when the session is
+    closed, so background work parked there cannot outlive the connection.
+
+    FastMCP's per-session ``_subscription_task_group`` is not cancelled when
+    the stdio transport reaches EOF (fastmcp 3.4.x), so a forever-task parked
+    there keeps the process alive after the client goes away.
+    """
+    for name in ("_task_group", "_subscription_task_group"):
+        task_group = getattr(session, name, None)
+        if task_group is not None:
+            return cast(anyio.abc.TaskGroup, task_group)
+    return None
 
 
 def _session_id(ctx: FastMCPContext | None) -> str | None:

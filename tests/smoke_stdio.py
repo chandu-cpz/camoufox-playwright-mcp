@@ -1,10 +1,8 @@
-"""End-to-end stdio smoke test: initialize + tools/list, no browser launch.
+"""End-to-end stdio smoke test: initialize + tools/list + clean exit.
 
-Catches startup regressions (for example signal handlers unsupported on
-Windows) before a client ever sees them as a timeout.
-
-The process is terminated once both responses arrive, because shutting the
-server down is not what this test is about.
+Catches startup and shutdown regressions (for example signal handlers
+unsupported on Windows, or a background task parked on a session group that
+is never cancelled) before a client ever sees them as a timeout.
 
 Run with: ``uv run python tests/smoke_stdio.py``
 """
@@ -21,6 +19,7 @@ from typing import Any, TextIO
 
 STARTUP_TIMEOUT_SECONDS = 120
 REQUEST_TIMEOUT_SECONDS = 60
+SHUTDOWN_TIMEOUT_SECONDS = 15
 TERMINATE_TIMEOUT_SECONDS = 5
 
 INITIALIZE: dict[str, Any] = {
@@ -130,7 +129,19 @@ def _run() -> int:
         server_info = initialize["result"].get("serverInfo", {})
         name = server_info.get("name", "unknown")
         version = server_info.get("version", "unknown")
-        print(f"OK: {name} {version} served {len(tools)} tools over stdio")
+
+        assert process.stdin is not None
+        process.stdin.close()
+        try:
+            returncode = process.wait(timeout=SHUTDOWN_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            raise SmokeFailure(
+                f"server did not exit within {SHUTDOWN_TIMEOUT_SECONDS}s after stdin EOF (orphaned process)"
+            ) from None
+        if returncode != 0:
+            raise SmokeFailure(f"server exited with {returncode} after stdin EOF")
+
+        print(f"OK: {name} {version} served {len(tools)} tools over stdio and exited cleanly")
         return 0
     finally:
         _terminate(process)
