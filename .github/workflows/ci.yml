@@ -27,3 +27,20 @@ jobs:
       - run: /tmp/camoufox-smoke/bin/camoufox-playwright-mcp --help
       - run: /tmp/camoufox-smoke/bin/camoufox-mcp --help
       - run: /tmp/camoufox-smoke/bin/python -m camoufox_playwright_mcp --help
+
+  windows-stdio-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v3
+
+      # Windows has no asyncio add_signal_handler(); this job exists so a
+      # startup crash there is caught in CI instead of by users.
+      - name: MCP stdio handshake (initialize + tools/list, no browser)
+        run: uv run python tests/smoke_stdio.py
