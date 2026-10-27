@@ -21,6 +21,7 @@ jobs:
       - run: uv run ruff check .
       - run: uv run mypy src tests
       - run: uv run pytest
+      - run: uv run python tests/smoke_stdio.py
       - run: uv build
       - run: python -m venv /tmp/camoufox-smoke
       - run: /tmp/camoufox-smoke/bin/python -m pip install dist/*.whl
@@ -42,5 +43,5 @@ jobs:
 
       # Windows has no asyncio add_signal_handler(); this job exists so a
       # startup crash there is caught in CI instead of by users.
-      - name: MCP stdio handshake (initialize + tools/list, no browser)
+      - name: MCP stdio handshake (initialize + tools/list + clean exit)
         run: uv run python tests/smoke_stdio.py

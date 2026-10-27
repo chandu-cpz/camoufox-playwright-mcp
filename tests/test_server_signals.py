@@ -6,7 +6,22 @@ from typing import Any, cast
 import anyio
 import pytest
 
-from camoufox_playwright_mcp.mcp.server import PlaywrightMCPServer
+from camoufox_playwright_mcp.mcp.server import PlaywrightMCPServer, _session_task_group
+
+
+def test_session_task_group_ends_with_the_session() -> None:
+    """The session's own task group is cancelled on close; FastMCP's is not."""
+
+    session_lifetime = object()
+    fastmcp_subscription = object()
+
+    both = SimpleNamespace(_task_group=session_lifetime, _subscription_task_group=fastmcp_subscription)
+    assert _session_task_group(cast(Any, both)) is session_lifetime
+
+    fallback_only = SimpleNamespace(_task_group=None, _subscription_task_group=fastmcp_subscription)
+    assert _session_task_group(cast(Any, fallback_only)) is fastmcp_subscription
+
+    assert _session_task_group(cast(Any, SimpleNamespace())) is None
 
 
 def test_watchdog_survives_unsupported_signal_handlers(monkeypatch: pytest.MonkeyPatch) -> None:
